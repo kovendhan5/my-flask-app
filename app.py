@@ -1,9 +1,9 @@
 from flask import Flask, render_template, request, redirect, session, url_for
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
 from werkzeug.utils import secure_filename
 import os
+from flask_frozen import Freezer
 
 # Flask app setup
 app = Flask(__name__)
@@ -89,5 +89,13 @@ def credentials_to_dict(credentials):
             'client_secret': credentials.client_secret,
             'scopes': credentials.scopes}
 
+# Initialize Frozen-Flask
+freezer = Freezer(app)
+
 if __name__ == '__main__':
+    # If running locally, use Flask development server
     app.run(debug=True)
+else:
+    # If deploying to Frozen-Flask (for GitHub Pages)
+    # Generate static files
+    freezer.freeze()

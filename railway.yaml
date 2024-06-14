@@ -1,0 +1,11 @@
+# railway.yaml
+
+services:
+  web:
+    port: 3000
+    env:
+      FLASK_APP: app.py
+      FLASK_ENV: production # Set to 'production' for production environment
+    commands:
+      - pip install -r requirements.txt
+      - flask run --host=0.0.0.0 --port=${PORT}

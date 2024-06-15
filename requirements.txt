@@ -48,6 +48,7 @@ Pygments==2.18.0
 pyparsing==3.1.2
 python-dateutil==2.9.0.post0
 pytz==2024.1
+pydrive==1.3.1  # Add this line
 pyzmq==26.0.3
 requests==2.32.3
 requests-oauthlib==2.0.0

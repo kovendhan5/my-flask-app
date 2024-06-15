@@ -8,7 +8,7 @@ from pydrive.drive import GoogleDrive
 
 # Flask app setup
 app = Flask(__name__)
-app.secret_key = os.environ.get('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', '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')  # Use environment variable for secret key
+app.secret_key = os.environ.get('SECRET_KEY', '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')  # Use environment variable for secret key
 
 # OAuth 2.0 configuration
 CLIENT_SECRETS_FILE = 'client_secrets.json'
@@ -26,7 +26,14 @@ drive = None
 @app.before_first_request
 def setup_drive():
     global drive
-    gauth.LocalWebserverAuth()
+    gauth.LoadCredentialsFile("credentials.json")
+    if gauth.credentials is None:
+        gauth.LocalWebserverAuth()
+        gauth.SaveCredentialsFile("credentials.json")
+    elif gauth.access_token_expired:
+        gauth.Refresh()
+    else:
+        gauth.Authorize()
     drive = GoogleDrive(gauth)
 
 # Route for the main page
@@ -102,4 +109,4 @@ def credentials_to_dict(credentials):
             'scopes': credentials.scopes}
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=10000)

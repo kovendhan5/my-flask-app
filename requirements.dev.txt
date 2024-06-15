@@ -1,0 +1,2 @@
+# Development dependencies
+pywin32==306

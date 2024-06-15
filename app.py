@@ -28,7 +28,10 @@ def setup_drive():
     global drive
     gauth.LoadCredentialsFile("credentials.json")
     if gauth.credentials is None:
-        gauth.LocalWebserverAuth()
+        if 'credentials' not in session:
+            return redirect(url_for('authorize'))
+        credentials = Credentials(**session['credentials'])
+        gauth.credentials = credentials
         gauth.SaveCredentialsFile("credentials.json")
     elif gauth.access_token_expired:
         gauth.Refresh()

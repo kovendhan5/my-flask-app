@@ -94,7 +94,7 @@ freezer = Freezer(app)
 
 if __name__ == '__main__':
     # If running locally, use Flask development server
-    app.run(debug=True)
+    app.run(debug= False,host='0.0.0.0')
 else:
     # If deploying to Frozen-Flask (for GitHub Pages)
     # Generate static files

@@ -1,13 +1,14 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session, url_for, flash
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from werkzeug.utils import secure_filename
 import os
-from flask_frozen import Freezer
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
 
 # Flask app setup
 app = Flask(__name__)
-app.secret_key = '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'  # Change this to a more secure random key
+app.secret_key = os.environ.get('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', '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')  # Use environment variable for secret key
 
 # OAuth 2.0 configuration
 CLIENT_SECRETS_FILE = 'client_secrets.json'
@@ -17,6 +18,16 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 # Ensure the UPLOAD_FOLDER exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# PyDrive setup
+gauth = GoogleAuth()
+drive = None
+
+@app.before_first_request
+def setup_drive():
+    global drive
+    gauth.LocalWebserverAuth()
+    drive = GoogleDrive(gauth)
 
 # Route for the main page
 @app.route('/')
@@ -29,24 +40,28 @@ def upload_file():
     if 'credentials' not in session:
         return redirect(url_for('authorize'))
 
-    # Check if the post request has the file part
     if 'file' not in request.files:
-        return 'No file part'
+        flash('No file part')
+        return redirect(request.url)
 
     file = request.files['file']
 
-    # If user does not select file, browser also submit an empty part without filename
     if file.filename == '':
-        return 'No selected file'
+        flash('No selected file')
+        return redirect(request.url)
 
-    # Check file extension
     if '.' not in file.filename or file.filename.rsplit('.', 1)[1].lower() not in ALLOWED_EXTENSIONS:
-        return 'Invalid file extension'
+        flash('Invalid file extension')
+        return redirect(request.url)
 
-    # Save the file to UPLOAD_FOLDER
     filename = secure_filename(file.filename)
     file_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(file_path)
+
+    # Upload to Google Drive
+    gfile = drive.CreateFile({'title': filename})
+    gfile.SetContentFile(file_path)
+    gfile.Upload()
 
     return f'File uploaded successfully: {filename}'
 
@@ -65,20 +80,17 @@ def authorize():
 # OAuth2 callback route
 @app.route('/oauth2callback')
 def oauth2callback():
-    # Retrieve the state from the session and verify it
     state = session['state']
     flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRETS_FILE, SCOPES, state=state)
     flow.redirect_uri = url_for('oauth2callback', _external=True)
 
-    # Use the authorization server's response to fetch the OAuth 2.0 tokens
     authorization_response = request.url
     flow.fetch_token(authorization_response=authorization_response)
 
-    # Store credentials in the session
     credentials = flow.credentials
     session['credentials'] = credentials_to_dict(credentials)
 
-    return redirect(url_for('upload_file'))
+    return redirect(url_for('index'))
 
 # Convert OAuth 2.0 credentials to dictionary
 def credentials_to_dict(credentials):
@@ -89,13 +101,5 @@ def credentials_to_dict(credentials):
             'client_secret': credentials.client_secret,
             'scopes': credentials.scopes}
 
-# Initialize Frozen-Flask
-freezer = Freezer(app)
-
 if __name__ == '__main__':
-    # If running locally, use Flask development server
-    app.run(debug= False,host='0.0.0.0')
-else:
-    # If deploying to Frozen-Flask (for GitHub Pages)
-    # Generate static files
-    freezer.freeze()
+    app.run(host='0.0.0.0', port=5000)

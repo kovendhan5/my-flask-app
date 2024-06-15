@@ -8,7 +8,7 @@ from pydrive.drive import GoogleDrive
 
 # Flask app setup
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', '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')  # Use environment variable for secret key
+app.secret_key = os.environ.get('SECRET_KEY', 'supersecretkey')  # Default to 'supersecretkey' if not set
 
 # OAuth 2.0 configuration
 CLIENT_SECRETS_FILE = 'client_secrets.json'
@@ -109,4 +109,4 @@ def credentials_to_dict(credentials):
             'scopes': credentials.scopes}
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+    app.run(host='0.0.0.0', port=5000)
